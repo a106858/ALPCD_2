@@ -2,6 +2,7 @@ import requests
 import typer
 import json
 from datetime import datetime
+import csv
 
 # Inicializa Typer para a CLI
 app = typer.Typer()
@@ -33,6 +34,27 @@ def listar_trabalhos(n: int = typer.Argument(10, help="Número de trabalhos para
     
     # Exibe a lista de trabalhos no terminal em formato JSON
     print(json.dumps(jobs_most_recent, ensure_ascii=False, indent=2))
+    
+    # Exporta automaticamente para CSV
+    with open("trabalhos.csv", mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        # Escreve o cabeçalho no CSV
+        writer.writerow(["Título", "Empresa", "Descrição", "Data de Publicação", "Salário", "Localização"])
+
+        for job in jobs_most_recent:
+            titulo = job.get("title", "N/A")
+            empresa = job.get("company", {}).get("name", "N/A")
+            descricao = job.get("body", "N/A")
+            data_publicacao = job.get("publishedAt", "N/A")
+            salario = job.get("wage", "N/A")
+            
+            # Concatena as localizações em uma string
+            localizacao = ", ".join(loc["name"] for loc in job.get("locations", []))
+
+            # Escreve os dados da vaga no CSV
+            writer.writerow([titulo, empresa, descricao, data_publicacao, salario, localizacao])
+    
+    print("Dados exportados automaticamente para 'trabalhos.csv' com sucesso!")
 
 # Ponto de entrada para a aplicação Typer
 if __name__ == "__main__":
