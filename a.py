@@ -1,3 +1,4 @@
+import re
 import requests
 import typer
 import json
@@ -13,6 +14,22 @@ URL = "https://api.itjobs.pt/job/list.json?api_key=09ad1042ebaf1704533805cd2fab6
 headers={
     "User-Agent":""
 }
+
+def limpar_html(texto_html):
+    """
+    Remove tags HTML e ajusta o texto para linguagem corrente.
+    """
+    # Remove tags <p>, <br>, <strong> etc., e ajusta quebras de linha
+    texto_limpo = re.sub(r"<br\s*/?>", " ", texto_html)  # Substitui <br> por espaço
+    texto_limpo = re.sub(r"</?p>", " ", texto_limpo)  # Substitui <p> por espaço
+    texto_limpo = re.sub(r"</?strong>", "", texto_limpo)  # Remove <strong> e </strong>
+    texto_limpo = re.sub(r"</?a[^>]*>", "", texto_limpo)  # Remove tags <a> (links)
+    texto_limpo = re.sub(r"<[^>]+>", "", texto_limpo)  # Remove qualquer outra tag HTML restante
+    
+    # Remove múltiplas quebras de linha, transformando-as em um único espaço
+    texto_limpo = re.sub(r"\n\s*\n", " ", texto_limpo).strip()  # Substitui múltiplas quebras de linha por espaço
+    
+    return texto_limpo
 
 @app.command()
 
@@ -44,7 +61,11 @@ def listar_trabalhos(n: int = typer.Argument(10, help="Número de trabalhos para
         for job in jobs_most_recent:
             titulo = job.get("title", "N/A")
             empresa = job.get("company", {}).get("name", "N/A")
-            descricao = job.get("body", "N/A")
+            
+            # Processa a descrição para limpar o HTML
+            descricao_html = job.get("body", "N/A")
+            descricao = limpar_html(descricao_html)
+            
             data_publicacao = job.get("publishedAt", "N/A")
             salario = job.get("wage", "N/A")
             
