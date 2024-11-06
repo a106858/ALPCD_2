@@ -53,7 +53,7 @@ def listar_trabalhos(n: int = typer.Argument(10, help="Número de trabalhos para
     print(json.dumps(jobs_most_recent, ensure_ascii=False, indent=2))
     
     # Exporta automaticamente para CSV
-    with open("trabalhos.csv", mode="w", newline="", encoding="utf-8") as file:
+    with open("trabalhos recentes.csv", mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         # Escreve o cabeçalho no CSV
         writer.writerow(["Título", "Empresa", "Descrição", "Data de Publicação", "Salário", "Localização"])
@@ -75,7 +75,7 @@ def listar_trabalhos(n: int = typer.Argument(10, help="Número de trabalhos para
             # Escreve os dados da vaga no CSV
             writer.writerow([titulo, empresa, descricao, data_publicacao, salario, localizacao])
     
-    print("Dados exportados automaticamente para 'trabalhos.csv' com sucesso!")
+    print("Dados exportados para 'trabalhos recentes.csv' com sucesso!")
 
 # Ponto de entrada para a aplicação Typer
 if __name__ == "__main__":
