@@ -22,8 +22,8 @@ def remote_jobs(
     location_ = location_.lower()
     contract_ = contract_.lower()
 
-    # Lista para armazenar vagas que atendem aos critérios
-    matched_jobs = []
+    # Variável para verificar se encontrou algum trabalho
+    found = False
 
     # Iterando sobre as vagas na API
     for job in data["results"]:
@@ -33,19 +33,11 @@ def remote_jobs(
         
         # Verificação adicional para allowRemote
         if job.get("allowRemote") == True and location_ in job_locations and contract_ in job_contracts:
-            matched_jobs.append({
-                "title": job['title'],
-                "company": job['company']['name'],
-                "locations": job_locations,
-                "contracts": job_contracts,
-                "remote": job.get("allowRemote"),
-            })
+            print(f"Trabalho remoto encontrado: {job['title']} na empresa {job['company']['name']}")
+            found = True
 
-    # Exibindo os resultados em JSON
-    if matched_jobs:
-        print(json.dumps(matched_jobs, ensure_ascii=False, indent=4))
-    else:
-        print(json.dumps({"message": "Nenhum trabalho remoto encontrado para os critérios especificados."}, ensure_ascii=False, indent=4))
+    if not found:
+        print("Nenhum trabalho remoto encontrado para os critérios especificados.")
 
 if __name__ == "__main__":
     app()
