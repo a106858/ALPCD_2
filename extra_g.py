@@ -2,9 +2,7 @@ import requests
 from collections import defaultdict
 
 URL = "https://api.itjobs.pt/job/list.json?api_key=09ad1042ebaf1704533805cd2fab64f1"
-headers = {
-    "User-Agent": ""
-}
+headers = {"User-Agent": ""}
 
 def obter_trabalhos():
     response = requests.get(URL, headers=headers)
