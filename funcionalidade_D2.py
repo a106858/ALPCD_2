@@ -1,4 +1,3 @@
-
 import typer
 import requests
 import json
@@ -11,15 +10,16 @@ BASE_URL = "https://api.itjobs.pt/job/list.json"
 headers = {"User-Agent": ""}
 
 @app.command()
-def skills(
+def skills(skill_check,
     skills: str = typer.Argument(..., help="Lista de skills separadas por vírgulas, por exemplo: python,django,sql")
 ):
     """
     Mostra os trabalhos que requerem uma lista de skills específica.
     """
+    if skill_check == "skills": 
     # Processa a lista de skills
-    skill_list = [skill.strip() for skill in skills.split(',')]
-    skills_query = ','.join(skill_list)
+     skill_list = [skill.strip() for skill in skills.split(',')]
+     skills_query = ','.join(skill_list)
 
     # Parâmetros da requisição
     params = {
@@ -59,3 +59,4 @@ def skills(
 
 if __name__ == "__main__":
     app()
+
