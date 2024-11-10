@@ -50,20 +50,20 @@ def exportar_para_pdf(dados_estruturados, nome_arquivo="trabalhos_por_localidade
         
         for empresa, titulos in empresas.items():
             pdf.set_font("Arial", size=11)
-            pdf.cell(2)
-            pdf.cell(0, 8, txt=f"                     Empresa: {empresa}", ln=True)
+            pdf.cell(23)
+            pdf.cell(0, 8, txt=f"Empresa: {empresa}", ln=True)
             
             for trabalho in titulos:
                 pdf.set_font("Arial", size=10)
-                pdf.cell(6)
-                pdf.cell(0, 6, txt=f"                                        Trabalho: {trabalho['titulo']}", ln=True)
+                pdf.cell(40)
+                pdf.cell(0, 6, txt=f"Trabalho: {trabalho['titulo']}", ln=True)
             
             for trabalho in titulos:
                 pdf.set_font("Arial", size=10)
-                pdf.cell(6)
-                pdf.cell(0, 6, txt=f"                                        email: {trabalho['email']}", ln=True)
-                pdf.cell(6)
-                pdf.cell(0, 6, txt=f"                                        url: {trabalho['url']}", ln=True)
+                pdf.cell(40)
+                pdf.cell(0, 6, txt=f"email: {trabalho['email']}", ln=True)
+                pdf.cell(40)
+                pdf.cell(0, 6, txt=f"url: {trabalho['url']}", ln=True)
     
     pdf.output(nome_arquivo)
     print(f"Dados exportados para '{nome_arquivo}' com sucesso!")
