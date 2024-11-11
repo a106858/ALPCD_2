@@ -29,17 +29,23 @@ def export_to_csv(data, export_csv: Optional[str]):
         try:
             with open(export_csv, mode="w", newline="", encoding="utf-8") as csv_file:
                 writer = csv.writer(csv_file)
-                # Cabeçalho para CSV
-                writer.writerow(["Título", "Empresa", "Descrição", "Data de Publicação", "Salário", "Localização"])
+                
+                # Definir cabeçalho para CSV com nomes dos campos
+                header = ["ID", "Título", "Empresa", "Descrição", "Data de Publicação", "Salário", "Localização"]
+                writer.writerow(header)
+                
+                # Escrever cada linha, tratando campos ausentes
                 for item in data:
-                    titulo = item.get("title", "N/A")
-                    empresa = item.get("company", {}).get("name", "N/A")
-                    descricao = limpar_html(item.get("body", "N/A"))
-                    data_publicacao = item.get("publishedAt", "N/A")
-                    salario = item.get("wage", "N/A")
-                    localizacao = "; ".join([loc["name"] for loc in item.get("locations", [])])
-                    
-                    writer.writerow([titulo, empresa, descricao, data_publicacao, salario, localizacao])
+                    row = [
+                        item.get("id", "N/A"),
+                        item.get("title", "N/A"),
+                        item.get("company", "N/A"),
+                        item.get("description", "N/A"),
+                        item.get("publishedAt", "N/A"),
+                        item.get("wage", "N/A"),
+                        item.get("locations", "N/A"),
+                    ]
+                    writer.writerow(row)
             print(f"Resultados exportados para o arquivo CSV: {export_csv}")
             
         except IOError as e:
@@ -228,14 +234,15 @@ def skills(
     for job in jobs:
         job_description = job.get("body", "").lower()
         if all(re.search(rf'\b{skill.lower()}\b', job_description) for skill in skill_list):
+            # Adiciona os dados do trabalho ao filtro com valores padrão
             job_data = {
-                "id": job.get("id"),
-                "title": job.get("title"),
-                "company": job.get("company", {}).get("name", ""),
-                "description": job.get("body"),
-                "publishedAt": job.get("publishedAt"),
-                "wage": job.get("wage", ""),
-                "locations": [location.get("name") for location in job.get("locations", [])],
+                "id": job.get("id", "N/A"),
+                "title": job.get("title", "N/A"),
+                "company": job.get("company", {}).get("name", "N/A"),
+                "description": limpar_html(job.get("body", "N/A")),
+                "publishedAt": job.get("publishedAt", "N/A"),
+                "wage": job.get("wage", "N/A"),
+                "locations": "; ".join([location.get("name", "N/A") for location in job.get("locations", [])]),
             }
             filtered_jobs.append(job_data)
 
