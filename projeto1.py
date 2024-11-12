@@ -148,8 +148,21 @@ def listar_trabalhos(
     jobs_most_recent = jobs_sorted[:n]
     print(json.dumps(jobs_most_recent, ensure_ascii=False, indent=2))
     
+    n_recent_jobs = []
+    for job in jobs_most_recent:
+        job_data = {
+                "id": job.get("id", "N/A"),
+                "title": job.get("title", "N/A"),
+                "company": job.get("company", {}).get("name", "N/A"),
+                "description": limpar_html(job.get("body", "N/A")),
+                "publishedAt": job.get("publishedAt", "N/A"),
+                "wage": job.get("wage", "N/A"),
+                "locations": "; ".join([location.get("name", "N/A") for location in job.get("locations", [])]),
+        }
+        n_recent_jobs.append(job_data)
+    
     # Exporta para CSV se solicitado
-    export_to_csv(jobs_most_recent, export_csv)
+    export_to_csv(n_recent_jobs, export_csv)
 
 # Função para listar todos os trabalhos do tipo full-time, publicados por uma determinada empresa, numa determinada localidade
 @app.command()
