@@ -209,7 +209,21 @@ def full_time_jobs(
         
         # Exporta para CSV se solicitado
         if export_csv:
-            export_to_csv(companies_result, export_csv)
+            
+            full_time_jobs_companies = []
+            for job in companies_result:
+                job_data = {
+                        "id": job.get("id", "N/A"),
+                        "title": job.get("title", "N/A"),
+                        "company": job.get("company", {}).get("name", "N/A"),
+                        "description": limpar_html(job.get("body", "N/A")),
+                        "publishedAt": job.get("publishedAt", "N/A"),
+                        "wage": job.get("wage", "N/A"),
+                        "locations": "; ".join([location.get("name", "N/A") for location in job.get("locations", [])]),
+                }
+                full_time_jobs_companies.append(job_data)
+            
+            export_to_csv(full_time_jobs_companies, export_csv)
     else:
         print(f"Não existe nenhum trabalho do tipo 'Full-time' com localização '{location}', encontrado para '{company_name}'.")
 
