@@ -24,26 +24,12 @@ def find_company_name(job_id):
             return company_name
     return None
 
-# função para obter o conteúdo do trabalho em formato json através da api
-def get_api_content(job_id):
-    data = get_api()
-    jobs = data.get("results", [])
-    
-    for job in jobs:
-        if job["id"] == job_id:
-            data = {
-                "id": job.get("id", "N/A"),
-                "title": job.get("title", "N/A"),
-                "company": job.get("company", {}).get("name", "N/A"),
-            }
-            json_api_data = json.dumps(data, indent=4)
-            return json_api_data
-    return None
-
-# função para obter o conteúdo da empresa em formato json através do html
-def get_html_content(company_name):
-    if not company_name:
-        return None
+# função para obter o html da empresa do website ambitionbox.com
+def get_html(job_id):
+    company_name = find_company_name(job_id)
+    if company_name is None:
+        print(f"Empresa não encontrada para o job ID {job_id}.")
+        return
     
     company_name1 = company_name.lower()
     company_name2 = re.sub(r'\s+', '-', company_name1)
@@ -65,6 +51,26 @@ def get_html_content(company_name):
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'lxml')
     
+    return soup
+
+# função para obter o conteúdo do trabalho em formato json através da api
+def get_api_content(job_id):
+    data = get_api()
+    jobs = data.get("results", [])
+    
+    for job in jobs:
+        if job["id"] == job_id:
+            data = {
+                "id": job.get("id", "N/A"),
+                "title": job.get("title", "N/A"),
+                "company": job.get("company", {}).get("name", "N/A"),
+            }
+            json_api_data = json.dumps(data, indent=4)
+            return json_api_data
+    return None
+
+# função para obter o conteúdo da empresa em formato json através do html
+def get_html_content(soup):
     body = soup.find('body')
 
     # encontrar o overall rating
@@ -105,13 +111,10 @@ def informations(job_id: int):
     if json_api_data is None:
         print(f"Job com ID {job_id} não encontrado na API.")
         return
-    company_name = find_company_name(job_id)
-    if company_name is None:
-        print(f"Empresa não encontrada para o job ID {job_id}.")
-        return
-    json_html_data = get_html_content(company_name)
+    soup = get_html(job_id)
+    json_html_data = get_html_content(soup)
     if json_html_data is None:
-        print(f"Não foi possível obter dados do website para a empresa: {company_name}.")
+        print(f"Não foi possível obter dados do website para a empresa: {soup}.")
         return
     
     json_data = json.loads(json_api_data)
