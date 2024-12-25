@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 
-=======
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -102,4 +100,3 @@ def list_skills_cli(job_title: str):
 
 if __name__ == "__main__":
     app()
->>>>>>> aad461a (Atualização do arquivo c.py: implementação da alínea c)
