@@ -59,7 +59,6 @@ def get_html(job_id):
 
 # Função para listar as principais skills de um trabalho
 def list_skills(job_title: str):
-    # Formatar o título do trabalho para a URL
     job_title_formatted = re.sub(r'\s+', '%20', job_title.lower())
     url = f"https://www.ambitionbox.com/jobs/search?tag={job_title_formatted}"
 
