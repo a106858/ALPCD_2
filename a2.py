@@ -8,25 +8,26 @@ app = typer.Typer()
 
 # função para obter a lista de trabalho da api do itjobs.pt
 def get_api():
-    all_results = []
     url = "https://api.itjobs.pt/job/list.json?api_key=09ad1042ebaf1704533805cd2fab64f1"
+    all_results = []
     page = 1
+    total_results = 0
 
-    while page <= 10:  # Limite de 10 páginas
+    while True:
         response = requests.get(f"{url}&page={page}", headers={"User-Agent": "Mozilla/5.0"})
-        if response.status_code != 200:
-            print(f"Erro ao acessar a API: {response.status_code}")
-            break
-
+        
         data = response.json()
         results = data.get("results", [])
+        total = data.get("total", 0)
+        total_results += len(results)
+
         if not results:
             break
 
         all_results.extend(results)
         page += 1
 
-        if len(results) < data.get("limit", 50):  # Finaliza se menos resultados que o limite
+        if total_results >= total:
             break
 
     return {"results": all_results}
@@ -113,7 +114,6 @@ def get_html_content(soup):
                 "top_employees_benefits": "Informações indisponíveis",
             }
         }
-
 
     # encontrar o overall rating
     overall_rating_tag = body.find('span', class_="css-1jxf684 text-primary-text font-pn-700 text-[32px] leading-[32px]")
