@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import typer
 import json
+import webbrowser
 import csv
 from collections import defaultdict
 
@@ -146,9 +147,71 @@ def get_html_content(soup):
     }
     return html_data
 
+# função para criar html
+def create_html(data_html):    
+
+    contacts = ""
+    if data_html['phone'] != "N/A":
+        contacts += f"<p>Phone: {data_html['phone']}</p>\n"
+    if data_html['email'] != "N/A":
+        contacts += f"<p>Email: {data_html['email']}</p>\n"
+    if data_html['url'] != "N/A":
+        contacts += f"<p>URL: {data_html['url']}</p>\n"
+
+    benefits = data_html['benefits']
+    benefits_split = benefits.split("; ")
+    work_policy = benefits_split[0].replace("work_policy: ", "Work Policy: ")
+    top_employees_benefits = benefits_split[1].replace("top_employees_benefits: ", "Top Employees Benefits: ")
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang=\"pt\">
+    <head>
+        <meta charset=\"UTF-8\">
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+        <title>{data_html['title']} at {data_html['company']}</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            h1, h2, h3 {{ color: #2c3e50; }}
+            .company {{ display: flex; align-items: center; gap: 15px; }}
+            .rating {{ font-size: 18px; margin-top: 5px; }}
+            .section {{ margin-top: 30px; }}
+            .section h3 {{ border-bottom: 2px solid #e1e1e1; padding-bottom: 5px; }}
+        </style>
+    </head>
+    <body>
+        <h1>{data_html['title']}</h1>
+        <div class=\"section\">
+            <h2>{data_html['company']}</h2>
+            <p class=\"rating\">Overall rating: {data_html['overall_rating']}</p>
+        </div>
+        <div class=\"section\">
+            <h3>Description</h3>
+            <p>{data_html['description']}</p>
+        </div>
+        <div class=\"section\">
+            <h3>Benefits</h3>
+            <p>{work_policy}</p>
+            <p>{top_employees_benefits}</p>
+        </div>
+        <div class=\"section\">
+            <h3>Contacts</h3>
+            {contacts}
+        </div>
+    </body>
+    </html>
+    """
+
+    # guardar o ficheiro html
+    file_name = "job_information.html"
+    with open(file_name, "w", encoding="utf-8") as file:
+        file.write(html_content)
+
+    return file_name
+
 # função para juntar todas as informações
 @app.command()
-def informations(job_id: int):
+def informations(job_id: int, generate_html: bool = typer.Option(False, help="Cria e abre o HTML com as informações.")):
     api_data = get_api_content(job_id)
     if api_data is None:
         print(f"Job com ID {job_id} não encontrado na API.")
@@ -157,8 +220,26 @@ def informations(job_id: int):
     html_content = get_html_content(soup)
 
     data = {**api_data, **html_content}
-
     print(json.dumps(data, indent=4))
+    
+    # criação do html solicitado (opcional)
+    if generate_html:
+        
+        api = get_api()
+        jobs = api.get("results", [])
+        for job in jobs:
+            if job["id"] == job_id:
+                contacts = {
+                    "phone": job.get("company", {}).get("phone", "N/A"),
+                    "email": job.get("company", {}).get("email", "N/A"),
+                    "url": job.get("company", {}).get("url", "N/A"),
+                }
+        
+        data_html = {**data, **contacts}
+        
+        file_name = create_html(data_html)
+        print(f"Página HTML criada: {file_name}")
+        webbrowser.open(file_name)
 
 # função para contar ocorrências de um trabalho numa localização
 def count_jobs_by_zone_and_type(jobs):
@@ -176,7 +257,7 @@ def count_jobs_by_zone_and_type(jobs):
 
 # função para exportar as contagens para um csv
 @app.command()
-def statistics(job_title: str = typer.Argument(None, help="Filtrar por tipo de trabalho")):
+def statistics(job_title: str = typer.Argument(None, help="Mostrar as vagas de um tipo de trabalho")):
     data = get_api()
     jobs = data.get("results", [])
 
@@ -194,15 +275,18 @@ def statistics(job_title: str = typer.Argument(None, help="Filtrar por tipo de t
     
     # dados do jobtitle solicitado (opcional)
     if job_title:
-        typer.echo(f"Vagas para o trabalho '{job_title}':")
-        filtered_jobs = []
-        for zone, job_types in count.items():
-            for job_type, number in job_types.items():
-                if job_title.lower() in job_type.lower():
-                    filtered_jobs.append((zone, job_type, number))
-                    typer.echo(f"Zona: {zone}, Tipo de Trabalho: {job_type}, Nº de Vagas: {number}")
-        
-        if not filtered_jobs:
+        filtered_jobs = [
+            (zone, job_type, number)
+            for zone, job_types in count.items()
+            for job_type, number in job_types.items()
+            if job_title.lower() in job_type.lower()
+        ]
+
+        if filtered_jobs:
+            typer.echo(f"Vagas para o trabalho '{job_title}':")
+            for zone, job_type, number in filtered_jobs:
+                typer.echo(f"Zona: {zone}, Tipo de Trabalho: {job_type}, Nº de Vagas: {number}")
+        else:
             typer.echo(f"Nenhuma vaga encontrada para o trabalho '{job_title}'.")
 
 if __name__ == "__main__":
