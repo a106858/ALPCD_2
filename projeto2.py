@@ -6,6 +6,7 @@ import json
 import webbrowser
 import csv
 from collections import defaultdict
+from typing import Optional
 
 app = typer.Typer()
 
@@ -209,9 +210,27 @@ def create_html(data_html):
 
     return file_name
 
+# função para exportar para csv
+def export_to_csv(data, export_csv: Optional[str]):
+    if export_csv:
+        try:
+            with open(export_csv, mode='w', newline='', encoding='utf-8') as csv_file:
+                fieldnames = data.keys()
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow(data)
+
+            print(f"Dados exportados para o arquivo CSV: {export_csv}")
+        except Exception as e:
+            print(f"Erro ao exportar dados para CSV: {e}")
+
 # função para juntar todas as informações
 @app.command()
-def informations(job_id: int, generate_html: bool = typer.Option(False, help="Cria e abre o HTML com as informações.")):
+def informations(
+    job_id: int, 
+    export_csv: Optional[str] = typer.Option(None, help="Exporta os dados para um arquivo CSV"), 
+    generate_html: bool = typer.Option(False, help="Cria e abre o HTML com as informações.")
+):
     api_data = get_api_content(job_id)
     if api_data is None:
         print(f"Job com ID {job_id} não encontrado na API.")
@@ -221,6 +240,10 @@ def informations(job_id: int, generate_html: bool = typer.Option(False, help="Cr
 
     data = {**api_data, **html_content}
     print(json.dumps(data, indent=4))
+    
+    # exportar dados para csv (opcional)
+    if export_csv:
+        export_to_csv(data, export_csv)
     
     # criação do html solicitado (opcional)
     if generate_html:
@@ -257,7 +280,9 @@ def count_jobs_by_zone_and_type(jobs):
 
 # função para exportar as contagens para um csv
 @app.command()
-def statistics(job_title: str = typer.Argument(None, help="Mostrar as vagas de um tipo de trabalho")):
+def statistics(
+    job_title: str = typer.Argument(None, help="Mostrar as vagas de um tipo de trabalho")
+):
     data = get_api()
     jobs = data.get("results", [])
 
