@@ -59,12 +59,10 @@ def get_html(job_id):
 
 # Função para listar as principais skills de um trabalho
 def list_skills(job_title: str):
-    job_title_formatted = re.sub(r'\s+', '%20', job_title.lower())
-    url = f"https://www.ambitionbox.com/jobs/search?tag={job_title_formatted}"
+    url = f"https://www.ambitionbox.com/jobs/search?tag={job_title}"
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,/;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
         "Accept-Encoding": "gzip, deflate",
         "Connection": "keep-alive",
@@ -74,7 +72,8 @@ def list_skills(job_title: str):
         "Sec-Fetch-Site": "none",
         "Sec-Fetch-User": "?1",
         "Cache-Control": "max-age=0"
-    }
+}
+
 
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'lxml')
