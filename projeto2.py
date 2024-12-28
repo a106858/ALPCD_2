@@ -35,6 +35,21 @@ def get_api():
 
     return {"results": all_results}
 
+# função para obter o conteúdo do trabalho em formato json através da api
+def get_api_content(job_id):
+    data = get_api()
+    jobs = data.get("results", [])
+    
+    for job in jobs:
+        if job["id"] == job_id:
+            api_data = {
+                "id": job.get("id", "N/A"),
+                "title": job.get("title", "N/A"),
+                "company": job.get("company", {}).get("name", "N/A"),
+            }
+            return api_data
+    return None
+
 # função para obter o id da empresa relativo ao jobid pedido
 def find_company_name(job_id):
     data = get_api()
@@ -79,21 +94,6 @@ def get_html(job_id):
     soup = BeautifulSoup(response.text, 'lxml')
     
     return soup
-
-# função para obter o conteúdo do trabalho em formato json através da api
-def get_api_content(job_id):
-    data = get_api()
-    jobs = data.get("results", [])
-    
-    for job in jobs:
-        if job["id"] == job_id:
-            api_data = {
-                "id": job.get("id", "N/A"),
-                "title": job.get("title", "N/A"),
-                "company": job.get("company", {}).get("name", "N/A"),
-            }
-            return api_data
-    return None
 
 # função para obter o conteúdo da empresa em formato json através do html
 def get_html_content(soup):
