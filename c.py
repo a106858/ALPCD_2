@@ -2,6 +2,7 @@ import typer
 import requests
 from bs4 import BeautifulSoup
 import json
+import csv
 from collections import Counter
 
 # Definindo a instância do Typer para a CLI
@@ -81,14 +82,28 @@ def get_skills(job_title: str):
 
     return result
 
+# Função para salvar os resultados em CSV
+def save_to_csv(data, filename="skills.csv"):
+    with open(filename, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=["skill", "count"])
+        writer.writeheader()
+        writer.writerows(data)
+
 # Comando da CLI para listar as skills
 @app.command()
-def list_skills(job_title: str):
+def list_skills(job_title: str, output_csv: bool = False):
     """Comando para listar as skills mais pedidas para um trabalho."""
     try:
         skills = get_skills(job_title)
+        
         # Exibindo a saída no formato JSON
         print(json.dumps(skills, indent=4))
+
+        # Se a opção for ativada, salvar os dados em CSV
+        if output_csv:
+            save_to_csv(skills)
+            print(f"Arquivo CSV salvo como 'skills.csv'.")
+
     except Exception as e:
         print(f"Erro: {e}")
 
