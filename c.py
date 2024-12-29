@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import csv
+from typing import Optional
 from collections import Counter
 
 # Definindo a instância do Typer para a CLI
@@ -83,15 +84,22 @@ def get_skills(job_title: str):
     return result
 
 # Função para salvar os resultados em CSV
-def save_to_csv(data, filename="skills.csv"):
-    with open(filename, mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=["skill", "count"])
-        writer.writeheader()
-        writer.writerows(data)
+def export_to_csv(data, export_csv: Optional[str]):
+    if export_csv:
+        try:
+            with open(export_csv, mode='w', newline='', encoding='utf-8') as csv_file:
+                fieldnames = data[0].keys()  # Pega as chaves do primeiro item na lista
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(data)
+
+            print(f"Dados exportados para o arquivo CSV: {export_csv}")
+        except Exception as e:
+            print(f"Erro ao exportar dados para CSV: {e}")
 
 # Comando da CLI para listar as skills
 @app.command()
-def list_skills(job_title: str, output_csv: bool = False):
+def list_skills(job_title: str, export_csv: Optional[str] = None):
     """Comando para listar as skills mais pedidas para um trabalho."""
     try:
         skills = get_skills(job_title)
@@ -99,10 +107,8 @@ def list_skills(job_title: str, output_csv: bool = False):
         # Exibindo a saída no formato JSON
         print(json.dumps(skills, indent=4))
 
-        # Se a opção for ativada, salvar os dados em CSV
-        if output_csv:
-            save_to_csv(skills)
-            print(f"Arquivo CSV salvo como 'skills.csv'.")
+        # Exportar os dados para CSV, se solicitado
+        export_to_csv(skills, export_csv)
 
     except Exception as e:
         print(f"Erro: {e}")
