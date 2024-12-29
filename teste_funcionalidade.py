@@ -6,12 +6,12 @@ from bs4 import BeautifulSoup
 
 app = typer.Typer()
 
-# Função para listar as principais skills de um trabalho
+# Function to list the main skills for a job
 def list_skills(job_title: str):
-    # Substituir espaços por hífens e converter para minúsculas
+    # Replace spaces with hyphens and convert to lowercase
     formatted_job_title = job_title.lower().replace(' ', '-')
     
-    # Criar o URL correto para a pesquisa de vagas
+    # Create the correct URL for the job search
     url = f"https://www.ambitionbox.com/jobs/{formatted_job_title}-jobs-prf"
 
     headers = {
@@ -28,17 +28,34 @@ def list_skills(job_title: str):
         "Cache-Control": "max-age=0"
     }
 
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, 'lxml')
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        soup = BeautifulSoup(response.text, 'lxml')
 
-    # Extrair skills da página
-    skills_elements = soup.find_all('div', class_='show-flex chips-cont')
-    skills = [skill.get_text(strip=True) for skill in skills_elements]
+        # Extract skills from the page
+        skills_elements = soup.select('div.ab_checkbox label div.text-wrap span.label')  # Updated selector
+        counts_elements = soup.select('div.ab_checkbox label div.text-wrap span:nth-of-type(2)')  # For counts
 
-    # Contar a frequência de cada skill
-    skills_count = Counter(skills).most_common(10)
+        if not skills_elements:
+            print("No skills found. Please verify the page structure.")
+            return
 
-    # Formatar em JSON
-    skills_json = [{"skill": skill, "count": count} for skill, count in skills_count]
+        # Parse skills and counts
+        skills = [skill.get_text(strip=True) for skill in skills_elements]
+        counts = [int(count.get_text(strip=True).strip('()')) for count in counts_elements]
 
-    print(json.dumps(skills_json, indent=4))
+        # Combine skills with counts
+        skills_data = list(zip(skills, counts))
+
+        # Count the frequency of each skill (if needed)
+        skills_json = [{"skill": skill, "count": count} for skill, count in skills_data]
+
+        print(json.dumps(skills_json, indent=4))
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching the page: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    typer.run(list_skills)
