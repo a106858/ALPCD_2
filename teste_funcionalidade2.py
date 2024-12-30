@@ -3,13 +3,31 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import csv
+from typing import Optional
 from collections import Counter
+import re
 
-# Definindo a instância do Typer para a CLI
 app = typer.Typer()
 
-# Headers a serem usados na requisição HTTP
-headers = {
+def export_to_csv2(data, export_csv: Optional[str]):
+    if export_csv:
+        try:
+            with open(export_csv, mode='w', newline='', encoding='utf-8') as csv_file:
+                fieldnames = data[0].keys()  # Pega as chaves do primeiro item na lista
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(data)
+
+            print(f"Dados exportados para o arquivo CSV: {export_csv}")
+        except Exception as e:
+            print(f"Erro ao exportar dados para CSV: {e}")
+
+
+def get_job_urls(job_title: str):
+    job_title_formatted = re.sub(r'\s+', '-', job_title.lower())
+    url = f"https://www.ambitionbox.com/jobs/{job_title_formatted}-jobs-prf"
+
+    headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.5',
@@ -21,91 +39,98 @@ headers = {
     'Sec-Fetch-Site': 'none',
     'Sec-Fetch-User': '?1',
     'Cache-Control': 'max-age=0'
-}
+    }
+    
+    job_urls = []
+    page = 1
+    
+    while True:
+        paginated_url = f"{url}?page={page}"
+        print(f"Fetching jobs from page {page}...")
 
-# Função para buscar skills de um job específico
-def get_skills_from_job(job_url: str):
-    response = requests.get(job_url, headers=headers)
-    response.raise_for_status()
+        try:
+            response = requests.get(paginated_url, headers=headers)
+            if response.status_code != 200:
+                print(f"Erro ao acessar a página {page}: {response.status_code}")
+                break
 
-    # Usando o BeautifulSoup para parsear o HTML da página do job
-    soup = BeautifulSoup(response.text, 'html.parser')
+            soup = BeautifulSoup(response.text, 'lxml')
+            job_elements = soup.find_all('div', class_='jobsInfoCardCont')
 
-    # Encontrar as tags de skills na página com a classe correta
-    skills_elements = soup.find_all('a', class_='body-medium chip')
+            # Se não houver mais jobs, interrompa o loop
+            if not job_elements:
+                print("Nenhum emprego encontrado na página atual. Finalizando...")
+                break
 
-    # Extrair os nomes das skills
-    skills = [skill.get_text(strip=True).lower() for skill in skills_elements]
+            new_job_urls = [f"https://www.ambitionbox.com{job.find('a')['href']}" for job in job_elements]
+            job_urls.extend(new_job_urls)
+            print(f"Encontrados {len(new_job_urls)} empregos na página {page}. Total acumulado: {len(job_urls)} URLs.")
 
-    return skills
+            page += 1
 
-# Função para buscar os links dos jobs na página de busca
-def get_job_urls(job_title: str):
-    # Codificando o título do trabalho para ser utilizado na URL, substituindo espaços por '-'
-    job_title = job_title.replace(" ", "-")
-    url = f"https://www.ambitionbox.com/jobs/{job_title}-jobs-prf"
+        except Exception as e:
+            print(f"Erro ao processar a página {page}: {e}")
+            break  # Interrompe o loop em caso de erro crítico
 
-    # Fazendo a requisição HTTP para a página com os headers fornecidos
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-
-    # Usando o BeautifulSoup para parsear o HTML da página
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Encontrar os divs que contêm os links para os jobs
-    job_elements = soup.find_all('div', class_='jobsInfoCardCont')
-
-    # Extrair os URLs dos jobs
-    job_urls = [f"https://www.ambitionbox.com{job.find('a')['href']}" for job in job_elements]
-
+    print(f"Coleta finalizada. Total de URLs coletados: {len(job_urls)}")
     return job_urls
 
-# Função principal para buscar as skills de vários jobs
-def get_skills(job_title: str):
-    job_urls = get_job_urls(job_title)
 
-    all_skills = []
 
-    # Para cada URL de job, buscar as skills
-    for url in job_urls:
-        skills = get_skills_from_job(url)
-        all_skills.extend(skills)
+def get_skills_from_job(job_url: str):
+    headers = {
+               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0", 
+               "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", 
+               "Accept-Language": "en-US,en;q=0.5", 
+               "Accept-Encoding": "gzip, deflate", 
+               "Connection": "keep-alive", 
+               "Upgrade-Insecure-Requests": "1", 
+               "Sec-Fetch-Dest": "document", 
+               "Sec-Fetch-Mode": "navigate", 
+               "Sec-Fetch-Site": "none", 
+               "Sec-Fetch-User": "?1", 
+               "Cache-Control": "max-age=0"
+    }
 
-    # Contando as ocorrências das skills
-    skill_count = Counter(all_skills)
-
-    # Pegando as 10 skills mais comuns
-    top_skills = skill_count.most_common(10)
-
-    # Formatando a saída como uma lista de dicionários para JSON
-    result = [{"skill": skill, "count": count} for skill, count in top_skills]
-
-    return result
-
-# Função para salvar os resultados em CSV
-def save_to_csv(data, filename="skills.csv"):
-    with open(filename, mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=["skill", "count"])
-        writer.writeheader()
-        writer.writerows(data)
-
-# Comando da CLI para listar as skills
-@app.command()
-def list_skills(job_title: str, output_csv: bool = False):
-    """Comando para listar as skills mais pedidas para um trabalho."""
     try:
-        skills = get_skills(job_title)
-        
-        # Exibindo a saída no formato JSON
-        print(json.dumps(skills, indent=4))
+        response = requests.get(job_url, headers=headers)
+        soup = BeautifulSoup(response.text, 'lxml')
+        skills_elements = soup.find_all('a', class_='body-medium chip')
+        skills = [skill.get_text(strip=True).lower() for skill in skills_elements]
+        return skills
+    except Exception as e:
+        print(f"Erro ao obter habilidades do URL {job_url}: {e}")
+        return []
 
-        # Se a opção for ativada, salvar os dados em CSV
-        if output_csv:
-            save_to_csv(skills)
-            print(f"Arquivo CSV salvo como 'skills.csv'.")
+
+@app.command()
+def list_skills(job_title: str, export_csv: Optional[str] = None):
+    try:
+        job_urls = get_job_urls(job_title)
+
+        all_skills = []
+
+        for url in job_urls:
+            skills = get_skills_from_job(url)
+            all_skills.extend(skills)
+
+        # Remover duplicatas e limpar dados
+        all_skills = list(filter(None, all_skills))  # Remove elementos vazios
+        skill_count = Counter(all_skills)
+
+        # Top skills sem duplicatas
+        top_skills = skill_count.most_common(10)
+
+        result = [{"skill": skill, "count": count} for skill, count in top_skills]
+
+        print(json.dumps(result, indent=4))
+
+        # Exportar dados para CSV (opcional)
+        export_to_csv2(result, export_csv)
 
     except Exception as e:
         print(f"Erro: {e}")
 
+
 if __name__ == "__main__":
-    app()
+    list_skills("data scientist")
