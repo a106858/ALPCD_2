@@ -328,8 +328,8 @@ def statistics(
 
 # função para ir buscar os links dos jobs na página
 def get_job_urls(job_title: str):
-    job_title_formatted = re.sub(r'\s+', '%20', job_title.lower())
-    url = f"https://www.ambitionbox.com/jobs/search?tag={job_title_formatted}"
+    job_title_formatted = re.sub(r'\s+', '-', job_title.lower())
+    url = f"https://www.ambitionbox.com/jobs/{job_title_formatted}-jobs-prf"
 
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0", 
                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", 
@@ -342,14 +342,33 @@ def get_job_urls(job_title: str):
                "Sec-Fetch-Site": "none", 
                "Sec-Fetch-User": "?1", 
                "Cache-Control": "max-age=0"}
+    
+    job_urls = []
+    page = 1
+    
+    while page <= 100:
+        paginated_url = f"{url}?page={page}"
 
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, 'lxml')
+        try:
+            response = requests.get(paginated_url, headers=headers)
+            if response.status_code != 200:
+                break
 
-    job_elements = soup.find_all('div', class_='jobsInfoCardCont')
+            soup = BeautifulSoup(response.text, 'lxml')
+            job_elements = soup.find_all('div', class_='jobsInfoCardCont')
+            if not job_elements:
+                break
 
-    job_urls = [f"https://www.ambitionbox.com{job.find('a')['href']}" for job in job_elements]
+            new_job_urls = [f"https://www.ambitionbox.com{job.find('a')['href']}" for job in job_elements]
+            job_urls.extend(new_job_urls)
 
+            page += 1
+
+        except Exception as e:
+            pass
+    
+    print(f"Total de URLs: {len(job_urls)}")
+                        
     return job_urls
 
 # função para encontrar skills de um job específico
@@ -366,14 +385,19 @@ def get_skills_from_job(job_url: str):
                "Sec-Fetch-User": "?1", 
                "Cache-Control": "max-age=0"}
 
-    response = requests.get(job_url, headers=headers)
-    soup = BeautifulSoup(response.text, 'lxml')
-
-    skills_elements = soup.find_all('a', class_='body-medium chip')
-
-    skills = [skill.get_text(strip=True).lower() for skill in skills_elements]
-
-    return skills
+    try:
+        response = requests.get(job_url, headers=headers)
+        soup = BeautifulSoup(response.text, 'lxml')
+        
+        skills_elements = soup.find_all('a', class_='body-medium chip')
+        skills = [skill.get_text(strip=True).lower() for skill in skills_elements]
+        
+        return skills
+    
+    except Exception as e:
+        print(f"Erro ao obter habilidades do URL {job_url}: {e}")
+        
+        return []
 
 # função para listar as principais skills de um trabalho
 @app.command()
@@ -387,6 +411,7 @@ def list_skills(job_title: str, export_csv: Optional[str] = None):
             skills = get_skills_from_job(url)
             all_skills.extend(skills)
 
+        all_skills = list(filter(None, all_skills))
         skill_count = Counter(all_skills)
 
         top_skills = skill_count.most_common(10)
