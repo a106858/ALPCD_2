@@ -757,7 +757,7 @@ def get_html_content2(soup):
     overall_rating_1 = overall_rating.text if overall_rating else "N/A"
 
     # encontrar a descrição da empresa
-    description_div = body.find('div', attrs={"data-testid": "less-text", "class": "css-9146s eu4oa1w0"})     # em alguns casos é more_text, alterar
+    description_div = body.find('div', attrs={"data-testid": "less-text", "class": "css-9146s eu4oa1w0"})
     if description_div:
         paragraphs = description_div.find_all('p')
         description = " ".join(p.text for p in paragraphs)
