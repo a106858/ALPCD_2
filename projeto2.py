@@ -14,12 +14,13 @@ app = typer.Typer()
 # função para obter a lista de trabalho da api do itjobs.pt
 def get_api():
     url = "https://api.itjobs.pt/job/list.json?api_key=09ad1042ebaf1704533805cd2fab64f1"
+    headers = {"User-Agent": "Mozilla/5.0"}
     all_results = []
     page = 1
     total_results = 0
 
     while True:
-        response = requests.get(f"{url}&page={page}", headers={"User-Agent": "Mozilla/5.0"})
+        response = requests.get(f"{url}&page={page}", headers=headers)
         
         data = response.json()
         results = data.get("results", [])
