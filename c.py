@@ -131,6 +131,3 @@ def list_skills(job_title: str, export_csv: Optional[str] = None):
     except Exception as e:
         print(f"Erro: {e}")
 
-
-if __name__ == "__main__":
-    list_skills("data scientist")
