@@ -522,7 +522,7 @@ def create_html(data_html):
 @app.command()
 def informations(
     job_id: int, 
-    export_csv: Optional[bool] = False, 
+    export_csv: Optional[str] = typer.Option(None, help="Exporta os dados para um arquivo CSV"), 
     generate_html: bool = typer.Option(False, help="Cria e abre o HTML com as informações.")
 ):
     api_data = get_api_content(job_id)
@@ -681,7 +681,7 @@ def get_skills_from_job(job_url: str):
 
 # função para listar as principais skills de um trabalho
 @app.command()
-def list_skills(job_title: str, export_csv: Optional[bool] = False):
+def list_skills(job_title: str, export_csv: Optional[str] = None):
     try:
         job_urls = get_job_urls(job_title)
 
@@ -774,7 +774,7 @@ def get_html_content2(soup):
 @app.command()
 def informations2(
     job_id: int, 
-    export_csv: Optional[bool] = False,
+    export_csv: Optional[str] = typer.Option(None, help="Exporta os dados para um arquivo CSV"),
 ):
     api_data = get_api_content(job_id)
     if api_data is None:
